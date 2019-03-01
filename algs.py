@@ -64,5 +64,5 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
             loss.backward(retain_graph = True)
             sgd.step()
         # calculate total return for this episode
-        returns.append(sum([(gamma ** i) * rewards[i] for i in range(len(rewards))]))
+        returns.append(sum([(gamma ** i) * rewards[i].detach() for i in range(len(rewards))]))
     return returns
