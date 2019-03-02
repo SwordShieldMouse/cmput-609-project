@@ -25,7 +25,7 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
     action_dim = env.action_space.n
     obs_dim = env.observation_space.shape[0]
     #print(action_dim, obs_dim)
-    policy = Policy(obs_dim, action_dim)
+    policy = Policy(obs_dim, action_dim).to(device)
     sgd = torch.optim.SGD(policy.parameters(), lr = lr)
 
     returns = []
@@ -33,10 +33,14 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
         obs = env.reset()
         done = False
 
+        # make sure we use the actual rewards to evaluate how we do
+        actual_rewards = []
+
+        # stores the rewards to which we might add entropy
         rewards = []
-        states = [obs]
+
+        states = [torch.Tensor(obs).to(device)]
         actions = []
-        action_log_probs = []
         while done is not True:
             env.render()
 
@@ -47,22 +51,24 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
             entropy = m.entropy()
 
             obs, reward, done, info = env.step(action.item())
+            actual_rewards.append(reward)
+            # also try adding just -\ln p_i for the action that is taken
             if use_entropy == True:
                 reward += entropy
 
+            states.append(torch.Tensor(obs).to(device))
             rewards.append(reward)
-            actions.append(action)
-            action_log_probs.append(m.log_prob(action))
-        for i in range(len(action_log_probs)):
+            actions.append(action.item())
+        for i in range(len(actions)):
             if i > len(rewards) - 1:
                 G = 0
             else:
-                G = sum([(gamma ** (i - j)) * rewards[j] for j in range(i, len(rewards))])
-            discount = gamma ** i
-            loss = -discount * G * action_log_probs[i]
+                G = sum([(gamma ** j) * rewards[j] for j in range(i, len(rewards))])
+            eligibity_vec = torch.log(policy(torch.Tensor(states[i]))[actions[i]]) # evaluate the gradient with the current params
+            loss = -G * eligibity_vec
             sgd.zero_grad()
             loss.backward(retain_graph = True)
             sgd.step()
         # calculate total return for this episode
-        returns.append(sum([(gamma ** i) * rewards[i].detach() for i in range(len(rewards))]))
+        returns.append(sum([(gamma ** i) * actual_rewards[i] for i in range(len(actual_rewards))]))
     return returns

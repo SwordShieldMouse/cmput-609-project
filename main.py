@@ -10,14 +10,14 @@ np.random.seed(609)
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(10)]
-trials = 100
+trials = 200
 
 returns = {}
 
 data = []
 for trial in range(trials):
     print("Starting trial {}".format(trial + 1))
-    data.append(train(env = env1, lr = 1e-3, gamma = 0.99, use_entropy = True, episodes = 10))
+    data.append(train(env = env1, lr = 1e-3, gamma = 0.99, use_entropy = True, episodes = 1000))
 data = np.average(data, axis = 0)
 std = np.std(data, axis = 0)
 seaborn.lineplot(data, range(len(data)))
