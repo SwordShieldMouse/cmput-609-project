@@ -64,7 +64,7 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
                 G = 0
             else:
                 G = sum([(gamma ** j) * rewards[j] for j in range(i, len(rewards))])
-            eligibity_vec = torch.log(policy(torch.Tensor(states[i]))[actions[i]]) # evaluate the gradient with the current params
+            eligibity_vec = torch.log(policy(states[i])[actions[i]]) # evaluate the gradient with the current params
             loss = -G * eligibity_vec
             sgd.zero_grad()
             loss.backward(retain_graph = True)
