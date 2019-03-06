@@ -42,7 +42,7 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
         states = [torch.Tensor(obs).to(device)]
         actions = []
         while done is not True:
-            env.render()
+            #env.render()
 
             probs = policy(torch.Tensor(obs).to(device))
             #entropy = policy.get_entropy(torch.Tensor(obs).to(device))
@@ -67,7 +67,10 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
             eligibity_vec = torch.log(policy(states[i])[actions[i]]) # evaluate the gradient with the current params
             loss = -G * eligibity_vec
             sgd.zero_grad()
-            loss.backward(retain_graph = True)
+            if i + 1 == len(actions):
+                loss.backward()
+            else:
+                loss.backward(retain_graph = True)
             sgd.step()
         # calculate total return for this episode
         returns.append(sum([(gamma ** i) * actual_rewards[i] for i in range(len(actual_rewards))]))
