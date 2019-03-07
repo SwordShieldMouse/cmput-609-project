@@ -11,13 +11,13 @@ np.random.seed(609)
 load_data = False
 run_experiment = True
 test_run = False
-save_data = True
+save_data = not(load_data)
 episodes = 100
 gamma = 0.99
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 10
+trials = 20
 
 returns = {"env": [], "lr": [], "use_entropy": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -65,8 +65,15 @@ if run_experiment == True:
 
 if load_data == True:
     df = pd.read_csv("experiments.csv")
+    print("data loaded")
 else:
     df = pd.DataFrame(returns)
+
+# save the data
+if save_data is True:
+    df.to_csv("experiments.csv", index = False)
+    print("data saved")
+
 ## plot data
 # plots needed: Best lr curves for each alg and env, plot of all lr's within algs for each env
 # best lr's within alg for each env
@@ -76,12 +83,10 @@ for env in envs:
         curr_env = df.env == env_name
         curr_entropy = df.use_entropy == use_entropy
         ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_entropy, :])
-        plt.savefig("figs/{}-{}-experiments.png".format(env, curr_entropy))
+        ax.set_title("Learning curves for use_entropy = {} on {}".format(str(use_entropy), env_name))
+        plt.savefig("figs\\{}-{}-experiments.png".format(env_name, str(use_entropy)))
         plt.show()
 
-# save the data
-if save_data is True:
-    df.to_csv("experiments.csv", index = False)
 
 ## do statistical tests?
 # other ways of evaluating: episodes required to get to a certain reward
