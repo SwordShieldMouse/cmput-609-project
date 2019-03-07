@@ -6,8 +6,6 @@ env3 = gym.make("Acrobot-v1")
 
 envs = [env1]
 
-np.random.seed(609)
-
 load_data = False
 run_experiment = True
 test_run = False
@@ -45,6 +43,7 @@ if run_experiment == True:
     for env in envs:
         for lr in lrs:
             for use_entropy in (True, False):
+                np.random.seed(609) # the random seed should be reset for every type of experiment since we want fair comparisons between algs
                 t_start = time.time()
                 env_name = env.unwrapped.spec.id
                 print("performing trials for env = {}, lr = {}, use_entropy = {}".format(env_name, lr, use_entropy))
