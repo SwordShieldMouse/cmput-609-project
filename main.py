@@ -4,7 +4,7 @@ env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0')
 env3 = gym.make("Acrobot-v1")
 
-envs = [env1, env2, env3]
+envs = [env1]
 
 np.random.seed(609)
 
@@ -45,18 +45,23 @@ if run_experiment == True:
     for env in envs:
         for lr in lrs:
             for use_entropy in (True, False):
+                t_start = time.time()
                 env_name = env.unwrapped.spec.id
                 print("performing trials for env = {}, lr = {}, use_entropy = {}".format(env_name, lr, use_entropy))
                 for trial in range(trials):
-                    returns["env"].append(env_name)
-                    returns["lr"].append(lr)
-                    returns["use_entropy"].append(use_entropy)
-                    # add index to mark the episodes in the returns dict?
+                    returns["env"] += [env_name] * episodes
+                    returns["lr"] += [lr] * episodes
+                    returns["use_entropy"] += [use_entropy] * episodes
+                    trial_t_start = time.time()
                     data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes)
+                    trial_t_end = time.time()
                     returns["episode"] += episode_ixs
                     returns["return"] += data
+                    print("trial {} took {}s".format(trial + 1, trial_t_end - trial_t_start))
                     #returns["ts"] = np.average(data, axis = 0)
                     #returns["std"] = np.std(data, axis = 0)
+                t_end = time.time()
+                print("time to complete: {}s".format(t_end - t_start))
 
 if load_data == True:
     df = pd.read_csv("experiments.csv")
