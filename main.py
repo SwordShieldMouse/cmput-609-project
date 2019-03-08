@@ -3,6 +3,11 @@ from algs import *
 env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0')
 env3 = gym.make("Acrobot-v1")
+env4 = gym.make("LunarLander-v2")
+
+# env1 and env4 have episodes that are short length so don't have to artificially terminate them
+
+# consider artificially terminating episodes if they run too long?
 
 envs = [env1]
 
@@ -12,6 +17,7 @@ test_run = False
 save_data = not(load_data)
 episodes = 100
 gamma = 0.99
+episode_length = 1000
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
@@ -51,9 +57,17 @@ if run_experiment == True:
                     returns["env"] += [env_name] * episodes
                     returns["lr"] += [lr] * episodes
                     returns["use_entropy"] += [use_entropy] * episodes
+
                     trial_t_start = time.time()
-                    data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes)
+
+                    if env == env3 or env == env4:
+                        # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
+                        data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes, episode_length = episode_length)
+                    else:
+                        data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes)
+
                     trial_t_end = time.time()
+
                     returns["episode"] += episode_ixs
                     returns["return"] += data
                     print("trial {} took {}s".format(trial + 1, trial_t_end - trial_t_start))

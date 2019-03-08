@@ -19,7 +19,7 @@ class Policy(nn.Module):
             probs = self.softmax(self.layer(x)).squeeze().tolist()
             return -sum([p * math.log(p) for p in probs])
 
-def train(env, lr, gamma, use_entropy, episodes = 100):
+def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
     # do REINFORCE because we only have one step-size
     # can do actor-critic later if there is time
     action_dim = env.action_space.n
@@ -41,6 +41,7 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
 
         states = [torch.Tensor(obs).to(device)]
         actions = []
+        t = 0 # to index episode time
         while done is not True:
             #env.render()
 
@@ -59,6 +60,11 @@ def train(env, lr, gamma, use_entropy, episodes = 100):
             states.append(torch.Tensor(obs).to(device))
             rewards.append(reward)
             actions.append(action.item())
+
+            t += 1
+
+            if episode_length != None and t >= episode_length:
+                break
         for i in range(len(actions)):
             if i > len(rewards) - 1:
                 G = 0
