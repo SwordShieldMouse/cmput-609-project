@@ -3,13 +3,13 @@ from algs import *
 env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0')
 env3 = gym.make("Acrobot-v1")
-env4 = gym.make("LunarLander-v2")
+#env4 = gym.make("LunarLander-v2")
 
 # env1 and env4 have episodes that are short length so don't have to artificially terminate them
 
 # consider artificially terminating episodes if they run too long?
 
-envs = [env1]
+envs = [env2]
 
 load_data = False
 run_experiment = True
@@ -60,7 +60,7 @@ if run_experiment == True:
 
                     trial_t_start = time.time()
 
-                    if env == env3 or env == env4:
+                    if env == env2 or env == env3:
                         # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
                         data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes, episode_length = episode_length)
                     else:
