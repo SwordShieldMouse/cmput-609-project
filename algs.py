@@ -6,18 +6,12 @@ class Policy(nn.Module):
     def __init__(self, d_state, d_action):
         super(Policy, self).__init__()
         self.layer = nn.Linear(d_state, d_action)
-        self.softmax = nn.Softmax(dim = -1)
+        self.softmax = nn.LogSoftmax(dim = -1)
 
     def forward(self, x):
         out = self.softmax(self.layer(x))
+        #assert torch.sum(torch.isnan(out) == 0), "policy output is nan, {}".format(self.layer.weight)
         return out
-
-    def get_entropy(self, x):
-        # returns the entropy of the policy given the current state
-        # don't need grad for this
-        with torch.no_grad():
-            probs = self.softmax(self.layer(x)).squeeze().tolist()
-            return -sum([p * math.log(p) for p in probs])
 
 def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
     # do REINFORCE because we only have one step-size
@@ -45,9 +39,9 @@ def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
         while done is not True:
             #env.render()
 
-            probs = policy(torch.Tensor(obs).to(device))
-            #entropy = policy.get_entropy(torch.Tensor(obs).to(device))
-            m = Categorical(probs)
+            log_probs = policy(torch.Tensor(obs).to(device))
+            m = Categorical(logits = log_probs)
+            #print("time = {}".format(t), log_probs, obs)
             action = m.sample()
             entropy = m.entropy()
 
@@ -66,12 +60,17 @@ def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
             if episode_length != None and t >= episode_length:
                 break
         for i in range(len(actions)):
-            if i > len(rewards) - 1:
-                G = 0
-            else:
+            G = 0
+            if i <= len(rewards) - 1:
                 G = sum([(gamma ** j) * rewards[j] for j in range(i, len(rewards))])
-            eligibity_vec = torch.log(policy(states[i])[actions[i]]) # evaluate the gradient with the current params
-            loss = -G * eligibity_vec
+
+            # don't need to use log since we already output logits
+            elig_vec = policy(states[i])[actions[i]] # evaluate the gradient with the current params
+
+            loss = -G * elig_vec
+            #assert np.isnan(G.detach()) == False, "G is nan"
+            #assert torch.sum(torch.isnan(elig_vec)) == 0, "elig vec is nan"
+            #assert np.isnan(loss.detach()) == False, "loss is nan"
             sgd.zero_grad()
             if i + 1 == len(actions):
                 loss.backward()

@@ -3,25 +3,25 @@ from algs import *
 env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0')
 env3 = gym.make("Acrobot-v1")
-#env4 = gym.make("LunarLander-v2")
+env4 = gym.make("LunarLander-v2")
 
 # env1 and env4 have episodes that are short length so don't have to artificially terminate them
 
 # consider artificially terminating episodes if they run too long?
 
-envs = [env2]
+envs = [env4, env1]
 
 load_data = False
 run_experiment = True
 test_run = False
 save_data = not(load_data)
-episodes = 100
+episodes = 50
 gamma = 0.99
-episode_length = 1000
+episode_length = None
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 20
+trials = 50
 
 returns = {"env": [], "lr": [], "use_entropy": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -61,6 +61,7 @@ if run_experiment == True:
                     trial_t_start = time.time()
 
                     if env == env2 or env == env3:
+                        print("will limit episode length to {} time steps".format(episode_length))
                         # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
                         data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes, episode_length = episode_length)
                     else:
