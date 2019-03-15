@@ -3,7 +3,7 @@ from test_envs import *
 
 env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0').env
-env3 = gym.make("Acrobot-v1")
+env3 = gym.make("Acrobot-v1").env
 env4 = gym.make("LunarLander-v2")
 
 # env1 and env4 have episodes that are short length so don't have to artificially terminate them
@@ -37,7 +37,7 @@ if test_run == True:
             print("trials for pseudoreward = {}".format(pseudoreward))
             for trial in range(trials):
                 print("Starting trial {}".format(trial + 1))
-                data = train(env = env3, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return, episode_length = episode_length)
+                data = train(env = env2, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return, episode_length = episode_length)
                 df["pseudoreward"] += [pseudoreward] * episodes
                 df["return"] += data
                 df["episode"] += episode_ixs
