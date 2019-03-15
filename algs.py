@@ -13,7 +13,7 @@ class Policy(nn.Module):
         #assert torch.sum(torch.isnan(out) == 0), "policy output is nan, {}".format(self.layer.weight)
         return out
 
-def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
+def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, render_env = False, print_return = False):
     # do REINFORCE because we only have one step-size
     # can do actor-critic later if there is time
     action_dim = env.action_space.n
@@ -37,23 +37,31 @@ def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
         actions = []
         t = 0 # to index episode time
         while done is not True:
-            #env.render()
+            if render_env is True:
+                env.render()
 
             log_probs = policy(torch.Tensor(obs).to(device))
             m = Categorical(logits = log_probs)
             #print("time = {}".format(t), log_probs, obs)
             action = m.sample()
-            entropy = m.entropy()
 
             obs, reward, done, info = env.step(action.item())
+
+            # the real rewards we will use for evaluating the algorithms
             actual_rewards.append(reward)
-            # also try adding just -\ln p_i for the action that is taken
-            if use_entropy == True:
-                reward += entropy
 
             states.append(torch.Tensor(obs).to(device))
-            rewards.append(reward)
             actions.append(action.item())
+
+            # adding pseudorewards possibly to help with exploration
+            if pseudoreward == "entropy":
+                reward += m.entropy()
+            elif pseudoreward == "information_content":
+                reward -= m.log_prob(action)
+
+            # the pseudoreward where we add entropy or information content
+            rewards.append(reward)
+
 
             t += 1
 
@@ -78,5 +86,8 @@ def train(env, lr, gamma, use_entropy, episodes = 100, episode_length = None):
                 loss.backward(retain_graph = True)
             sgd.step()
         # calculate total return for this episode
-        returns.append(sum([(gamma ** i) * actual_rewards[i] for i in range(len(actual_rewards))]))
+        curr_return = sum([(gamma ** i) * actual_rewards[i] for i in range(len(actual_rewards))])
+        if print_return is True:
+            print("return on episode {} is {}".format(episode + 1, curr_return))
+        returns.append(curr_return)
     return returns

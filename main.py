@@ -1,7 +1,8 @@
 from algs import *
+from test_envs import *
 
 env1 = gym.make('CartPole-v0')
-env2 = gym.make('MountainCar-v0')
+env2 = gym.make('MountainCar-v0').env
 env3 = gym.make("Acrobot-v1")
 env4 = gym.make("LunarLander-v2")
 
@@ -9,31 +10,35 @@ env4 = gym.make("LunarLander-v2")
 
 # consider artificially terminating episodes if they run too long?
 
-envs = [env4, env1]
+envs = [env1]
+pseudorewards = ["entropy", "information_content"]
 
+run_experiment = False
+render_env = True
+print_return = True
 load_data = False
-run_experiment = True
-test_run = False
-save_data = not(load_data)
-episodes = 50
+test_run = not(run_experiment)
+save_data = run_experiment
+episodes = 40
 gamma = 0.99
 episode_length = None
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 50
+trials = 2
 
-returns = {"env": [], "lr": [], "use_entropy": [], "episode": [], "return": []}
+returns = {"env": [], "lr": [], "pseudoreward": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
 
 if test_run == True:
-    df = {"episode": [], "return": [], "use_entropy": [], "lr": []}
-    for lr in (1e-4, 2e-4, 4e-4):
-        for use_entropy in (True, False):
+    df = {"episode": [], "return": [], "pseudoreward": [], "lr": []}
+    for lr in (2e-4, 4e-4):
+        for pseudoreward in pseudorewards:
+            print("trials for pseudoreward = {}".format(pseudoreward))
             for trial in range(trials):
                 print("Starting trial {}".format(trial + 1))
-                data = train(env = env1, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes)
-                df["use_entropy"] += [use_entropy] * episodes
+                data = train(env = env3, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return, episode_length = episode_length)
+                df["pseudoreward"] += [pseudoreward] * episodes
                 df["return"] += data
                 df["episode"] += episode_ixs
                 df["lr"] += [lr] * episodes
@@ -48,7 +53,7 @@ if test_run == True:
 if run_experiment == True:
     for env in envs:
         for lr in lrs:
-            for use_entropy in (True, False):
+            for pseudoreward in pseudorewards:
                 np.random.seed(609) # the random seed should be reset for every type of experiment since we want fair comparisons between algs
                 t_start = time.time()
                 env_name = env.unwrapped.spec.id
@@ -56,16 +61,16 @@ if run_experiment == True:
                 for trial in range(trials):
                     returns["env"] += [env_name] * episodes
                     returns["lr"] += [lr] * episodes
-                    returns["use_entropy"] += [use_entropy] * episodes
+                    returns["pseudoreward"] += [pseudoreward] * episodes
 
                     trial_t_start = time.time()
 
                     if env == env2 or env == env3:
                         print("will limit episode length to {} time steps".format(episode_length))
                         # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
-                        data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes, episode_length = episode_length)
+                        data = train(env = env, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, episode_length = episode_length, render_env = render_env, print_return = print_return)
                     else:
-                        data = train(env = env, lr = lr, gamma = gamma, use_entropy = use_entropy, episodes = episodes)
+                        data = train(env = env, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return)
 
                     trial_t_end = time.time()
 
@@ -91,15 +96,16 @@ if save_data is True:
 ## plot data
 # plots needed: Best lr curves for each alg and env, plot of all lr's within algs for each env
 # best lr's within alg for each env
-for env in envs:
-    for use_entropy in (True, False):
-        env_name = env.unwrapped.spec.id
-        curr_env = df.env == env_name
-        curr_entropy = df.use_entropy == use_entropy
-        ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_entropy, :])
-        ax.set_title("Learning curves for use_entropy = {} on {}".format(str(use_entropy), env_name))
-        plt.savefig("figs\\{}-{}-experiments.png".format(env_name, str(use_entropy)))
-        plt.show()
+if load_data is True or run_experiment is True:
+    for env in envs:
+        for pseudoreward in pseudorewards:
+            env_name = env.unwrapped.spec.id
+            curr_env = df.env == env_name
+            curr_entropy = df.use_entropy == use_entropy
+            ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_entropy, :])
+            ax.set_title("Learning curves for pseudoreward = {} on {}".format(pseudoreward, env_name))
+            plt.savefig("figs\\{}-{}-experiments.png".format(env_name, pseudoreward))
+            plt.show()
 
 
 ## do statistical tests?
