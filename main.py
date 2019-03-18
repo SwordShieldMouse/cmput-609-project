@@ -11,7 +11,7 @@ env4 = gym.make("LunarLander-v2")
 # consider artificially terminating episodes if they run too long?
 
 envs = [env1]
-pseudorewards = ["entropy", "information_content"]
+pseudorewards = ["none", "entropy", "information_content"]
 
 run_experiment = False
 render_env = True
@@ -19,13 +19,13 @@ print_return = True
 load_data = False
 test_run = not(run_experiment)
 save_data = run_experiment
-episodes = 40
+episodes = 3
 gamma = 0.99
-episode_length = None
+episode_length = 500
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 2
+trials = 3
 
 returns = {"env": [], "lr": [], "pseudoreward": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -46,7 +46,7 @@ if test_run == True:
     #df.lr = df.lr.astype('category')
     #df.lr.cat.remove_unused_categories() # make sure we don't plot extraneous learning rates
     # seaborn provides bootstrapped confidence intervals
-    seaborn.lineplot(x = "episode", y = "return", data = df, hue = "lr", style = 'use_entropy', legend = 'full')
+    seaborn.lineplot(x = "episode", y = "return", data = df, hue = "lr", style = 'pseudoreward', legend = 'full')
     plt.show()
 
 ### experiment
