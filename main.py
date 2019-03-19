@@ -5,6 +5,7 @@ env1 = gym.make('CartPole-v0')
 env2 = gym.make('MountainCar-v0').env
 env3 = gym.make("Acrobot-v1").env
 env4 = gym.make("LunarLander-v2")
+env5 = SCGrid()
 
 # env1 and env4 have episodes that are short length so don't have to artificially terminate them
 
@@ -14,18 +15,18 @@ envs = [env1]
 pseudorewards = ["none", "entropy", "information_content"]
 
 run_experiment = False
-render_env = True
-print_return = True
+render_env = False
+print_return = False
 load_data = False
 test_run = not(run_experiment)
 save_data = run_experiment
-episodes = 3
+episodes = 10
 gamma = 0.99
-episode_length = 500
+episode_length = None
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 3
+trials = 100
 
 returns = {"env": [], "lr": [], "pseudoreward": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -37,7 +38,7 @@ if test_run == True:
             print("trials for pseudoreward = {}".format(pseudoreward))
             for trial in range(trials):
                 print("Starting trial {}".format(trial + 1))
-                data = train(env = env2, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return, episode_length = episode_length)
+                data = train(env = env5, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return, episode_length = episode_length)
                 df["pseudoreward"] += [pseudoreward] * episodes
                 df["return"] += data
                 df["episode"] += episode_ixs

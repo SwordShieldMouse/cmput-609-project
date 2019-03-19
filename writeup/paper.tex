@@ -51,7 +51,7 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
 
-\title{CMPUT 609 Course Project}
+\title{Entropy and Information Content as Exploration Bonuses in REINFORCE}
 \author{Alan Chan}
 \date{}
 
@@ -59,12 +59,40 @@
   \maketitle
 
   \section{Introduction}
-  Policy gradient methods in Reinforcement Learning (RL) are a way of learning a policy in a Markov Decision Process (MDP) so as to maximize an objective function, usually the expected reward.
+  Policy gradient methods \citep[Chapter~13]{sutton2018reinforcement} in Reinforcement Learning (RL) are a way of learning a parametrized policy $\pi_\theta(a \mid s)$ in a Markov Decision Process (MDP) so as to maximize an objective function, usually the expected return $v_{\pi_\theta}(s_0)$ starting from a state $s_0$, where $v_{\pi_\theta}$ is the value function of $\pi_\theta$. In the following, we will assume that our state space $S$ and action space $A$ are both finite.
 
-  \section{Methods}
-  
+  A key component of policy gradient methods, and RL techniques in general, is sufficient exploration of the state-action space to identify optimal action(s) for a given state. One possible technique to improve such exploration is the use of entropy or information content as a pseudoreward signal. More formally, let $R(s, a)$ be a random variable denoting the reward obtained from following action $a$ in state $s$. We define the following two quantities:
 
-  \section{Results & Discussion}
+  \begin{align*}
+    R_e(s, a) &:= R(s, a) - \sum_{a' \in A} \pi_\theta(a' \mid s) \ln\left(\pi_\theta(a' \mid s)\right),
+    R_i(s, a) &:= R(s, a) - \ln\left(\pi_\theta(a \mid s)\right),
+  \end{align*}
+
+  where $R_e(s, a)$ will be denoted the \textit{entropy pseudoreward}, and $R_i(s, a)$ will be denoted the \textit{information content pseudoreward}. Intuitively, for a given state-action pair $(s, a)$, $R_e(s, a)$ is maximized as a function of the policy $\pi_\theta$ when $\pi_\theta$ is a uniform distribution over all actions $a$. Thus, the reward is highest for a policy that uniformly selects actions at random, corresponding to a high degree of exploration. For a given state $s$, the maximum of $R_i(s, a)$ as a function of $a$ corresponds to a tradeoff between the maximum of $R(s, a)$ as a function of $a$ and $- \ln\left(\pi_\theta(a \mid s)\right)$ as a function of $a$. Intuitively, $- \ln\left(\pi_\theta(a \mid s)\right)$, the information content of taking action $a$, is at a maximum when $\pi_\theta(a \mid s)$ is at a minimum. In other words, the information content term in $R_i(s, a)$ encourages the agent to take actions that have low probability under the current policy, again corresponding to an increase in exploration.
+
+  In this report, we focus upon the use of the entropy and information content pseudorowards in the REINFORCE algorithm \citep{williams1992simple}, pseudocode of which is in \citet[p.~328]{sutton2018reinforcement}. We evaluate compare both of the pseudorewards with the vanilla reward $R(s, a)$ to determine if any of the pseudorewards facilitate better exploration of the state-action space and thus whether a higher return is achieved in less time.
+
+  \section{Experimental Details}
+  \subsection{Algorithms}
+  All code is available at \url{}.
+
+  REINFORCE is the main algorithm used for this comparison. We chose REINFORCE because of its relative simplicity in the class of policy gradient algorithms. We chose not to use a baseline, as is common in practice to reduce the variance of REINFORCE updates, so that we may isolate the effects of the different reward functions.
+
+  All methods were trained with SGD with step-sizes in the set $\{1 \cdot 10^{-4} \cdot 2^i : i \in \{0, 1, 2, 3, 4\}\}$. All algorithms were run for a set number of trials depending upon the environment, and the random seed was reset to the same value at the beginning of each set of trials for a given algorithm and environment to ensure fair comparison amongst all the algorithms.
+
+  We plot learning curves of all the methods for each of our environments.
+
+  \subsection{Environments}
+  We performed experiments on three environments. The first environment is the short corridor gridworld from \citet[p.~323]{sutton2018reinforcement}.
+
+  The second environment is cart pole,
+
+  The third environment is mountain car
+
+  \section{Results \& Discussion}
 
   \section{Conclusion}
+
+  \bibliography{bibliography}
+  \bibliographystyle{plain}
 \end{document}

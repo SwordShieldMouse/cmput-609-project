@@ -16,8 +16,12 @@ class Policy(nn.Module):
 def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, render_env = False, print_return = False):
     # do REINFORCE because we only have one step-size
     # can do actor-critic later if there is time
-    action_dim = env.action_space.n
-    obs_dim = env.observation_space.shape[0]
+    try: # if we are working with gym
+        action_dim = env.action_space.n
+        obs_dim = env.observation_space.shape[0]
+    except: # if we are working with our own environments
+        action_dim = env.action_dim
+        obs_dim = env.obs_dim
     #print(action_dim, obs_dim)
     policy = Policy(obs_dim, action_dim).to(device)
     sgd = torch.optim.SGD(policy.parameters(), lr = lr)
