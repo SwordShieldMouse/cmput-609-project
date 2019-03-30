@@ -14,10 +14,10 @@ env5 = SCGrid()
 envs = [env1, env5]
 pseudorewards = ["none", "entropy", "information_content"]
 
-run_experiment = True
+run_experiment = False
 render_env = False
 print_return = False
-load_data = False
+load_data = True
 test_run = False
 save_data = run_experiment
 episodes = 50
@@ -109,11 +109,30 @@ if load_data is True or run_experiment is True:
                 env_name = env.name
             curr_env = df.env == env_name
             curr_pseudoreward = df.pseudoreward == pseudoreward
+            plt.figure(figsize = (15, 10))
             ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_pseudoreward, :])
             ax.set_title("Learning curves for pseudoreward = {} on {}".format(pseudoreward, env_name))
-            plt.savefig("figs\\{}-{}-experiments.png".format(env_name, pseudoreward))
-            plt.show()
+            plt.savefig("figs\\{}-{}.png".format(env_name, pseudoreward))
+            #plt.show()
 
 
 ## do statistical tests?
-# other ways of evaluating: episodes required to get to a certain reward
+# plot best learning curves from each method on one plot
+for env in envs:
+    try:
+        env_name = env.unwrapped.spec.id
+    except:
+        env_name = env.name
+    curr_env = df.env == env_name
+    best_none = (df.pseudoreward == "none") & (df.lr == 8e-4)
+    if env_name == "ShortCorridorGridworld":
+        best_entropy = (df.pseudoreward == "entropy") & (df.lr == 1e-4)
+    else:
+        best_entropy = (df.pseudoreward == "entropy") & (df.lr == 8e-4)
+    best_info = (df.pseudoreward == "information_content") & (df.lr == 8e-4)
+    rows = curr_env & (best_none | best_entropy | best_info)
+    plt.figure(figsize = (15, 10))
+    ax = seaborn.lineplot(x = "episode", y = "return", style = "lr", hue = "pseudoreward", legend = "full", data = df.loc[rows, :])
+    ax.set_title("Comparison of algorithms on env = {}".format(env_name))
+    plt.savefig("figs\\{}-compare.png".format(env_name))
+    #plt.show()
