@@ -9,6 +9,7 @@ class SCGrid():
         self.obs = [1] # all states look the same in this env, so only return one number
         self.states = [0, 1, 2, 3]
         self.curr_state = 0
+        self.name = "ShortCorridorGridworld"
 
     def step(self, action):
         # if in second state, reverse moves
