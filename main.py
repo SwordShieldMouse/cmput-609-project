@@ -11,22 +11,22 @@ env5 = SCGrid()
 
 # consider artificially terminating episodes if they run too long?
 
-envs = [env1]
+envs = [env1, env5]
 pseudorewards = ["none", "entropy", "information_content"]
 
-run_experiment = False
+run_experiment = True
 render_env = False
 print_return = False
 load_data = False
-test_run = not(run_experiment)
+test_run = False
 save_data = run_experiment
-episodes = 10
+episodes = 50
 gamma = 0.99
 episode_length = None
 
 # learning rates we will try
-lrs = [1e-4 * (2 ** i) for i in range(5)]
-trials = 100
+lrs = [1e-4 * (2 ** i) for i in range(4)]
+trials = 200
 
 returns = {"env": [], "lr": [], "pseudoreward": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -57,8 +57,11 @@ if run_experiment == True:
             for pseudoreward in pseudorewards:
                 np.random.seed(609) # the random seed should be reset for every type of experiment since we want fair comparisons between algs
                 t_start = time.time()
-                env_name = env.unwrapped.spec.id
-                print("performing trials for env = {}, lr = {}, use_entropy = {}".format(env_name, lr, use_entropy))
+                try:
+                    env_name = env.unwrapped.spec.id
+                except:
+                    env_name = env.name
+                print("performing trials for env = {}, lr = {}, pseudoreward = {}".format(env_name, lr, pseudoreward))
                 for trial in range(trials):
                     returns["env"] += [env_name] * episodes
                     returns["lr"] += [lr] * episodes
@@ -100,10 +103,13 @@ if save_data is True:
 if load_data is True or run_experiment is True:
     for env in envs:
         for pseudoreward in pseudorewards:
-            env_name = env.unwrapped.spec.id
+            try:
+                env_name = env.unwrapped.spec.id
+            except:
+                env_name = env.name
             curr_env = df.env == env_name
-            curr_entropy = df.use_entropy == use_entropy
-            ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_entropy, :])
+            curr_pseudoreward = df.pseudoreward == pseudoreward
+            ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_pseudoreward, :])
             ax.set_title("Learning curves for pseudoreward = {} on {}".format(pseudoreward, env_name))
             plt.savefig("figs\\{}-{}-experiments.png".format(env_name, pseudoreward))
             plt.show()
