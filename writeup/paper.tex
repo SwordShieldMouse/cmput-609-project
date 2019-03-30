@@ -6,8 +6,8 @@
 \bibliographystyle{abbrvnat}
 \setcitestyle{authoryear,open={(},close={)}}
 
-\usepackage[autostyle, english = american]{csquotes}
-\MakeOuterQuote{"}
+%\usepackage[autostyle, english = american]{csquotes}
+%\MakeOuterQuote{"}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -59,37 +59,108 @@
   \maketitle
 
   \section{Introduction}
-  Policy gradient methods \citep[Chapter~13]{sutton2018reinforcement} in Reinforcement Learning (RL) are a way of learning a parametrized policy $\pi_\theta(a \mid s)$ in a Markov Decision Process (MDP) so as to maximize an objective function, usually the expected return $v_{\pi_\theta}(s_0)$ starting from a state $s_0$, where $v_{\pi_\theta}$ is the value function of $\pi_\theta$. In the following, we will assume that our state space $S$ and action space $A$ are both finite.
+  Policy gradient methods \citep[Chapter~13]{sutton2018reinforcement} in Reinforcement Learning (RL) are a way of learning a parametrized policy $\pi_\theta(a \mid s)$ in a Markov Decision Process (MDP) \citep[Chapter~3]{sutton2018reinforcement} so as to maximize an objective function, usually the expected return $v_{\pi_\theta}(s_0)$ starting from a state $s_0$, where $v_{\pi_\theta}$ is the value function of $\pi_\theta$. More concretely,
 
-  A key component of policy gradient methods, and RL techniques in general, is sufficient exploration of the state-action space to identify optimal action(s) for a given state. One possible technique to improve such exploration is the use of entropy or information content as a pseudoreward signal. More formally, let $R(s, a)$ be a random variable denoting the reward obtained from following action $a$ in state $s$. We define the following two quantities:
+  \begin{equation*}
+    v_{\pi_\theta}(s_0) := \Ex\left[G_t \mid S_t = s_0\right] = \Ex\left[\sum_{t' = t}^T \gamma^{t'- t} R(S_t, A_t) \right],
+  \end{equation*}
+
+  where $\gamma$ is the discount factor and $T$ is our termination time. $T$ itself is a random variable, and may be $\infty$ in the case of a continuing MDP. $G_t$ is called the return at time $t$.
+
+  In the following, we will assume that our state space $\mathcal{S}$ and action space $\mathcal{A}$ are both finite.
+
+  A key component of policy gradient methods, and RL techniques in general, is sufficient exploration of the state-action space to identify actions for a given state that will lead to high return. One possible technique to improve such exploration is the use of entropy or information content as a reward in addition to the reward $R(s, a)$ from the external environment. More formally, let $R(a, a)$ be a random variable denoting the reward obtained from following action $a$ in state $s$. We define the following two quantities:
 
   \begin{align*}
-    R_e(s, a) &:= R(s, a) - \sum_{a' \in A} \pi_\theta(a' \mid s) \ln\left(\pi_\theta(a' \mid s)\right),
+    R_e(s, a) &:= R(s, a) - \sum_{a' \in A} \pi_\theta(a' \mid s) \ln\left(\pi_\theta(a' \mid s)\right),\\
     R_i(s, a) &:= R(s, a) - \ln\left(\pi_\theta(a \mid s)\right),
   \end{align*}
 
-  where $R_e(s, a)$ will be denoted the \textit{entropy pseudoreward}, and $R_i(s, a)$ will be denoted the \textit{information content pseudoreward}. Intuitively, for a given state-action pair $(s, a)$, $R_e(s, a)$ is maximized as a function of the policy $\pi_\theta$ when $\pi_\theta$ is a uniform distribution over all actions $a$. Thus, the reward is highest for a policy that uniformly selects actions at random, corresponding to a high degree of exploration. For a given state $s$, the maximum of $R_i(s, a)$ as a function of $a$ corresponds to a tradeoff between the maximum of $R(s, a)$ as a function of $a$ and $- \ln\left(\pi_\theta(a \mid s)\right)$ as a function of $a$. Intuitively, $- \ln\left(\pi_\theta(a \mid s)\right)$, the information content of taking action $a$, is at a maximum when $\pi_\theta(a \mid s)$ is at a minimum. In other words, the information content term in $R_i(s, a)$ encourages the agent to take actions that have low probability under the current policy, again corresponding to an increase in exploration.
+  where $R_e(s, a)$ will be denoted the \textit{entropy pseudoreward}, and $R_i(s, a)$ will be denoted the \textit{information content pseudoreward}. We will use the term pseudoreward to refer to reward signals that are not solely from the environment. The reward $R(s, a)$ that comes from the environment will just be referred to as the reward. Intuitively, for a given state-action pair $(s, a)$, $R_e(s, a)$ is maximized as a function of the policy $\pi_\theta$ when $\pi_\theta$ is a uniform distribution over all actions $a$. Thus, the reward is highest for a policy that uniformly selects actions at random, corresponding to a high degree of exploration. For a given state $s$, the maximum of $R_i(s, a)$ as a function of $a$ corresponds to a tradeoff between the maximum of $R(s, a)$ as a function of $a$ and $- \ln\left(\pi_\theta(a \mid s)\right)$ as a function of $a$. Intuitively, $- \ln\left(\pi_\theta(a \mid s)\right)$, the information content of taking action $a$, is at a maximum when $\pi_\theta(a \mid s)$ is at a minimum. In other words, the information content term in $R_i(s, a)$ encourages the agent to take actions that have low probability under the current policy, again corresponding to an increase in exploration.
 
-  In this report, we focus upon the use of the entropy and information content pseudorowards in the REINFORCE algorithm \citep{williams1992simple}, pseudocode of which is in \citet[p.~328]{sutton2018reinforcement}. We evaluate compare both of the pseudorewards with the vanilla reward $R(s, a)$ to determine if any of the pseudorewards facilitate better exploration of the state-action space and thus whether a higher return is achieved in less time.
+  In this report, we focus upon the use of the entropy and information content pseudorowards in the REINFORCE algorithm \citep{williams1992simple}. We evaluate compare both of the pseudorewards with the reward $R(s, a)$ to determine if any of the pseudorewards facilitate better exploration of the state-action space and thus whether a higher return is achieved in less time.
 
   \section{Experimental Details}
   \subsection{Algorithms}
-  All code is available at \url{}.
+  All code is available at \url{https://github.com/SwordShieldMouse/cmput-609-project}.
 
-  REINFORCE is the main algorithm used for this comparison. We chose REINFORCE because of its relative simplicity in the class of policy gradient algorithms. We chose not to use a baseline, as is common in practice to reduce the variance of REINFORCE updates, so that we may isolate the effects of the different reward functions.
+  REINFORCE is the main, overarching algorithm used for the comparison of pseudoreward functions. We chose REINFORCE because of its relative simplicity in the class of policy gradient algorithms. We chose not to use a baseline, as is common in practice to reduce the variance of REINFORCE updates, so that we may isolate the effects of the different reward functions.
 
-  All methods were trained with SGD with step-sizes in the set $\{1 \cdot 10^{-4} \cdot 2^i : i \in \{0, 1, 2, 3, 4\}\}$. All algorithms were run for a set number of trials depending upon the environment, and the random seed was reset to the same value at the beginning of each set of trials for a given algorithm and environment to ensure fair comparison amongst all the algorithms.
+  We use the same functional form for the policy $\pi(\cdot \mid \cdot, \bm{\theta})$ for all of our experiments, where $\bm{\theta}$ is the parameter vector. We let $\bm{\theta} \in \mathbb{R}^{|\mathcal{S}| \times |\mathcal{A}|}$, so we have
+
+  \begin{equation*}
+    \pi(\cdot \mid S, \bm{\theta}) :=  Softmax(S^T \bm{\theta}),
+  \end{equation*}
+
+  where we slightly abuse notation and write $S$ for the features of state $S$.
+
+  As noted above, we will focus our comparison of the reward $R(s, a)$ with two types of pseudorewards: the entropy pseudoreward $R_e(s, a)$ and the information content pseudoreward $R_i(s, a)$. There are thus three alternatives we will test. 1: REINFORCE using $R(s, a)$ without any additional pseudoreward signal \ref{alg:vanilla}; 2: REINFORCE with $R_i(s, a)$ replacing the reward \ref{alg:information_content}; 3: REINFORCE with $R_e(s, a)$ replacing the reward \ref{alg:entropy}. Of course, during evaluation of the algorithms, we will use $R(s, a)$ in calculating the return for each algorithm.
+
+  \begin{algorithm}
+    \caption{REINFORCE with $R(s, a)$. Base pseudocode from \citet[p.328]{sutton2018reinforcement}.}
+    \label{alg:vanilla}
+    \begin{algorithmic}
+      \State Input: policy $\pi(a \mid s, \bm{\theta})$
+      \State Parameter: step-size $\alpha$
+      \For{each episode}
+        \State Generate an episode $\{(S_i, A_i, R_{i + 1})\}_{i = 0}^{T - 1}$ following $\pi(\cdot \mid \cdot, \bm{\theta})$
+        \For{$t = 0, \cdots, T - 1$}
+          \State $G := \sum_{k = t + 1}^T \gamma^{k - t - 1} R_k$
+          \State $\bm{\theta} := \alpha \gamma^t G \nabla \ln \pi(A_t \mid S_t, \bm{\theta})$.
+        \EndFor
+      \EndFor
+    \end{algorithmic}
+  \end{algorithm}
+
+  \begin{algorithm}
+    \caption{REINFORCE with $R_e(s, a)$. Base pseudocode from \citet[p.328]{sutton2018reinforcement}.}
+    \label{alg:entropy}
+    \begin{algorithmic}
+      \State Input: policy $\pi(a \mid s, \bm{\theta})$
+      \State Parameter: step-size $\alpha$
+      \For{each episode}
+        \State Generate an episode $\{(S_i, A_i, R_{i + 1})\}_{i = 0}^{T - 1}$ following $\pi(\cdot \mid \cdot, \bm{\theta})$
+        \For{$t = 0, \cdots, T - 1$}
+          \State $G := \sum_{k = t + 1}^T \gamma^{k - t - 1} (R_k - \sum_{a \in \mathcal{A}} \pi(a \mid S_{k - 1}, \bm{\theta}) \ln \pi(a \mid S_{k - 1}, \bm{\theta}))$
+          \State $\bm{\theta} := \alpha \gamma^t G \nabla \ln \pi(A_t \mid S_t, \bm{\theta})$.
+        \EndFor
+      \EndFor
+    \end{algorithmic}
+  \end{algorithm}
+
+  \begin{algorithm}
+    \caption{REINFORCE with $R_i(s, a)$. Base pseudocode from \citet[p.328]{sutton2018reinforcement}.}
+    \label{alg:information_content}
+    \begin{algorithmic}
+      \State Input: policy $\pi(a \mid s, \bm{\theta})$
+      \State Parameter: step-size $\alpha$
+      \For{each episode}
+        \State Generate an episode $\{(S_i, A_i, R_{i + 1})\}_{i = 0}^{T - 1}$ following $\pi(\cdot \mid \cdot, \bm{\theta})$
+        \For{$t = 0, \cdots, T - 1$}
+          \State $G := \sum_{k = t + 1}^T \gamma^{k - t - 1} (R_k - \ln \pi(A_{k - 1} \mid S_{k - 1}, \bm{\theta}))$
+          \State $\bm{\theta} := \alpha \gamma^t G \nabla \ln \pi(A_t \mid S_t, \bm{\theta})$.
+        \EndFor
+      \EndFor
+    \end{algorithmic}
+  \end{algorithm}
+
+  All methods were trained with SGD with step-sizes in the set $\{1 \cdot 10^{-4} \cdot 2^i : i \in \{0, 1, 2, 3, 4, 5\}\}$. All algorithms were run for a set number of trials depending upon the environment, and the random seed was reset to the same value (609) at the beginning of each set of trials for a given algorithm and environment to ensure fair comparison amongst all the algorithms.
 
   We plot learning curves of all the methods for each of our environments.
 
+  All experiments were run in Python 3.7 on an early 2015 MacBook Pro running macOS Mojave 10.14. PyTorch was used for implementing the policy architecture and calculating gradients.
+
   \subsection{Environments}
-  We performed experiments on three environments. The first environment is the short corridor gridworld from \citet[p.~323]{sutton2018reinforcement}.
+  For all environments, the discount factor was set to $\gamma := 0.99$.
 
-  The second environment is cart pole,
+  We performed experiments on three environments. The first environment is the short corridor gridworld from \citet[p.~323]{sutton2018reinforcement}. There are four states, one of which is terminal (the rightmost state). All the states are represented by the same number. In this case, we chose 1. At each of the three non-terminal states, there are two actions: right and left. In the leftmost state and the third state from the left, the actions have the usual consequences of moving the agent right or left if possible. In the second state from the left, the results of the actions are switched, so that right moves left and left moves right. Here, we set the number of episodes to be $100$ and the number of trials to be $500$. We chose the short corridor grid world to compare our results to those in the book.
 
-  The third environment is mountain car
+  The second environment is cart pole, where the number of episodes was $500$ and the number of trials was $500$. The goal of the agent is to balance a pole situated on a cart by applying force to move the cart.
+
+  The third environment is mountain car, where we ran experiments for $10$ episodes and $100$ trials. The comparatively low number of episodes and trials is due to the difficulty of the mountain car environment.
 
   \section{Results \& Discussion}
+
 
   \section{Conclusion}
 
