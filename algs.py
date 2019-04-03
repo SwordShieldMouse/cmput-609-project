@@ -25,7 +25,9 @@ def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, r
     #print(action_dim, obs_dim)
     policy = Policy(obs_dim, action_dim).to(device)
     sgd = torch.optim.SGD(policy.parameters(), lr = lr)
-
+    #false_rewards = {"episode": [], "false_reward": []}
+    #policy_probs = {"timestep": [], "prob": []}
+    #plt.figure(figsize = (15, 10))
     returns = []
     for episode in range(episodes):
         obs = env.reset()
@@ -34,12 +36,14 @@ def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, r
         # make sure we use the actual rewards to evaluate how we do
         actual_rewards = []
 
+        #false_rewards = []
+
         # stores the rewards to which we might add entropy
         rewards = []
 
         states = [torch.Tensor(obs).to(device)]
         actions = []
-        t = 0 # to index episode time
+        t = 0 # to index episode timestep
         while done is not True:
             if render_env is True:
                 env.render()
@@ -48,6 +52,13 @@ def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, r
             m = Categorical(logits = log_probs)
             #print("time = {}".format(t), log_probs, obs)
             action = m.sample()
+
+            # record the action probs
+            """policy_probs["timestep"].append(t)
+            if action == 0: # records prob of going left
+                policy_probs["prob"].append(np.exp(m.log_prob(action).detach().item()))
+            else:
+                policy_probs["prob"].append(1 - np.exp(m.log_prob(action).detach().item()))"""
 
             obs, reward, done, info = env.step(action.item())
 
@@ -59,9 +70,16 @@ def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, r
 
             # adding pseudorewards possibly to help with exploration
             if pseudoreward == "entropy":
-                reward += m.entropy()
+                reward += m.entropy().detach() # detach so that we don't take the derivative of this
+                #print(m.entropy())
+                #false_rewards["episode"].append(episode)
+                #false_rewards["false_reward"].append(reward.detach().item())
+                #false_rewards.append(reward.detach().item())
             elif pseudoreward == "information_content":
-                reward -= m.log_prob(action)
+                reward -= m.log_prob(action).detach() # detach so that we don't take the derivative of this
+                #false_rewards["episode"].append(episode)
+                #false_rewards["false_reward"].append(reward.detach().item())
+                #false_rewards.append(reward.detach().item())
 
             # the pseudoreward where we add entropy or information content
             rewards.append(reward)
@@ -94,4 +112,13 @@ def train(env, lr, gamma, pseudoreward, episodes = 100, episode_length = None, r
         if print_return is True:
             print("return on episode {} is {}".format(episode + 1, curr_return))
         returns.append(curr_return)
+        #seaborn.lineplot(x = "timestep", y = "prob", data = policy_probs, ci = None, legend = "full")
+
+
+    # print the false rewards
+    #false_rewards = pd.DataFrame(false_rewards)
+    #seaborn.lineplot(x = "episode", y = "false_reward", data = false_rewards, ci = 95)
+    #plt.ylabel("Probability of taking action left")
+    #plt.xlabel("Timestep")
+    #plt.show()
     return returns

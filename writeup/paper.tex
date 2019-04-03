@@ -25,6 +25,7 @@
 \usepackage{algorithm, algpseudocode}
 \usepackage{bm}
 \usepackage{caption}
+\usepackage{subcaption}
 
 \usepackage{pgfplots}
 \pgfplotsset{compat=newest}
@@ -51,6 +52,12 @@
 \newtheorem{lemma}{Lemma}
 \newtheorem{corollary}{Corollary}
 
+\captionsetup[subfigure]{subrefformat=simple,labelformat=simple}
+  \renewcommand\thesubfigure{(\alph{subfigure})}
+
+  \renewcommand{\thesubfigure}{(\alph{subfigure})}
+\captionsetup[sub]{labelformat=simple}
+
 \title{Entropy and Information Content as Exploration Bonuses in REINFORCE}
 \author{Alan Chan}
 \date{}
@@ -58,8 +65,12 @@
 \begin{document}
   \maketitle
 
+  \begin{abstract}
+
+  \end{abstract}
+
   \section{Introduction}
-  Policy gradient methods \citep[Chapter~13]{sutton2018reinforcement} in Reinforcement Learning (RL) are a way of learning a parametrized policy $\pi_\theta(a \mid s)$ in a Markov Decision Process (MDP) \citep[Chapter~3]{sutton2018reinforcement} so as to maximize an objective function, usually the expected return $v_{\pi_\theta}(s_0)$ starting from a state $s_0$, where $v_{\pi_\theta}$ is the value function of $\pi_\theta$. More concretely,
+  Policy gradient methods \citep[Chapter~13]{sutton2018reinforcement} in Reinforcement Learning (RL) are a way of learning a parametrized policy $\pi_\theta(a \mid s)$ in a Markov Decision Process (MDP) \citep[Chapter~3]{sutton2018reinforcement} so as to maximize an objective function. The objective function in a policy gradient setting is usually the expected return $v_{\pi_\theta}(s_0)$ starting from a state $s_0$, where $v_{\pi_\theta}$ is the value function of $\pi_\theta$. More concretely,
 
   \begin{equation*}
     v_{\pi_\theta}(s_0) := \Ex\left[G_t \mid S_t = s_0\right] = \Ex\left[\sum_{t' = t}^T \gamma^{t'- t} R(S_t, A_t) \right],
@@ -69,7 +80,7 @@
 
   In the following, we will assume that our state space $\mathcal{S}$ and action space $\mathcal{A}$ are both finite.
 
-  A key component of policy gradient methods, and RL techniques in general, is sufficient exploration of the state-action space to identify actions for a given state that will lead to high return. One possible technique to improve such exploration is the use of entropy or information content as a reward in addition to the reward $R(s, a)$ from the external environment. More formally, let $R(a, a)$ be a random variable denoting the reward obtained from following action $a$ in state $s$. We define the following two quantities:
+  A key component of policy gradient methods, and RL techniques in general, is sufficient exploration of the state-action space to identify actions for a given state that will lead to high return. One possible technique to improve such exploration is the use of entropy or information content as a reward bonus in addition to the reward $R(s, a)$ from the external environment. More formally, let $R(a, a)$ be a random variable denoting the reward obtained from following action $a$ in state $s$. We define the following two quantities:
 
   \begin{align*}
     R_e(s, a) &:= R(s, a) - \sum_{a' \in A} \pi_\theta(a' \mid s) \ln\left(\pi_\theta(a' \mid s)\right),\\
@@ -78,7 +89,7 @@
 
   where $R_e(s, a)$ will be denoted the \textit{entropy pseudoreward}, and $R_i(s, a)$ will be denoted the \textit{information content pseudoreward}. We will use the term pseudoreward to refer to reward signals that are not solely from the environment. The reward $R(s, a)$ that comes from the environment will just be referred to as the reward. Intuitively, for a given state-action pair $(s, a)$, $R_e(s, a)$ is maximized as a function of the policy $\pi_\theta$ when $\pi_\theta$ is a uniform distribution over all actions $a$. Thus, the reward is highest for a policy that uniformly selects actions at random, corresponding to a high degree of exploration. For a given state $s$, the maximum of $R_i(s, a)$ as a function of $a$ corresponds to a tradeoff between the maximum of $R(s, a)$ as a function of $a$ and $- \ln\left(\pi_\theta(a \mid s)\right)$ as a function of $a$. Intuitively, $- \ln\left(\pi_\theta(a \mid s)\right)$, the information content of taking action $a$, is at a maximum when $\pi_\theta(a \mid s)$ is at a minimum. In other words, the information content term in $R_i(s, a)$ encourages the agent to take actions that have low probability under the current policy, again corresponding to an increase in exploration.
 
-  In this report, we focus upon the use of the entropy and information content pseudorowards in the REINFORCE algorithm \citep{williams1992simple}. We evaluate compare both of the pseudorewards with the reward $R(s, a)$ to determine if any of the pseudorewards facilitate better exploration of the state-action space and thus whether a higher return is achieved in less time.
+  In this report, we focus upon the use of the entropy and information content pseudorowards in the REINFORCE algorithm \citep{williams1992simple}. We evaluate compare both of the pseudorewards with the reward $R(s, a)$ to determine if any of the pseudorewards facilitate better exploration of the state-action space and thus whether a higher return is achieved in less time. We hypothesize that both of the reward bonuses will substantially improve exploration and enable agents to accumulate more return sooner than without the bonuses.
 
   \section{Experimental Details}
   \subsection{Algorithms}
@@ -92,9 +103,9 @@
     \pi(\cdot \mid S, \bm{\theta}) :=  Softmax(S^T \bm{\theta}),
   \end{equation*}
 
-  where we slightly abuse notation and write $S$ for the features of state $S$.
+  where we slightly abuse notation and write $S$ for the features of state $S$. For every single trial, the initial weight vector was set to the same random value.
 
-  As noted above, we will focus our comparison of the reward $R(s, a)$ with two types of pseudorewards: the entropy pseudoreward $R_e(s, a)$ and the information content pseudoreward $R_i(s, a)$. There are thus three alternatives we will test. 1: REINFORCE using $R(s, a)$ without any additional pseudoreward signal \ref{alg:vanilla}; 2: REINFORCE with $R_i(s, a)$ replacing the reward \ref{alg:information_content}; 3: REINFORCE with $R_e(s, a)$ replacing the reward \ref{alg:entropy}. Of course, during evaluation of the algorithms, we will use $R(s, a)$ in calculating the return for each algorithm.
+  As noted above, we will focus our comparison of the reward $R(s, a)$ with two types of pseudorewards: the entropy pseudoreward $R_e(s, a)$ and the information content pseudoreward $R_i(s, a)$. There are thus three alternatives we will test. 1: REINFORCE using $R(s, a)$ without any additional pseudoreward signal \cref{alg:vanilla} (we will sometimes refer to this as the "vanilla" reward); 2: REINFORCE with $R_i(s, a)$ replacing the reward \cref{alg:information_content}; 3: REINFORCE with $R_e(s, a)$ replacing the reward \cref{alg:entropy}. Of course, during evaluation of the algorithms, we will use $R(s, a)$ in calculating the return for each algorithm.
 
   \begin{algorithm}
     \caption{REINFORCE with $R(s, a)$. Base pseudocode from \citet[p.328]{sutton2018reinforcement}.}
@@ -144,7 +155,7 @@
     \end{algorithmic}
   \end{algorithm}
 
-  All methods were trained with SGD with step-sizes in the set $\{1 \cdot 10^{-4} \cdot 2^i : i \in \{0, 1, 2, 3, 4, 5\}\}$. All algorithms were run for a set number of trials depending upon the environment, and the random seed was reset to the same value (609) at the beginning of each set of trials for a given algorithm and environment to ensure fair comparison amongst all the algorithms.
+  All methods were trained with SGD with step-sizes in the set $\{1 \cdot 10^{-4} \cdot 2^i : i \in \{0, 1, 2, 3, 4\}\}$. All algorithms were run for a set number of trials depending upon the environment, and the random seed was reset to the same value (609) at the beginning of each set of trials for a given algorithm and environment to ensure fair comparison amongst all the algorithms.
 
   We plot learning curves of all the methods for each of our environments.
 
@@ -153,16 +164,96 @@
   \subsection{Environments}
   For all environments, the discount factor was set to $\gamma := 0.99$.
 
-  We performed experiments on three environments. The first environment is the short corridor gridworld from \citet[p.~323]{sutton2018reinforcement}. There are four states, one of which is terminal (the rightmost state). All the states are represented by the same number. In this case, we chose 1. At each of the three non-terminal states, there are two actions: right and left. In the leftmost state and the third state from the left, the actions have the usual consequences of moving the agent right or left if possible. In the second state from the left, the results of the actions are switched, so that right moves left and left moves right. Here, we set the number of episodes to be $100$ and the number of trials to be $500$. We chose the short corridor grid world to compare our results to those in the book.
+  We performed experiments on two environments. The first environment is the short corridor gridworld from \citet[p.~323]{sutton2018reinforcement}. There are four states, one of which is terminal (the rightmost state). All the states are represented by the same number. In this case, we chose 1. At each of the three non-terminal states, there are two actions: right and left. In the leftmost state and the third state from the left, the actions have the usual consequences of moving the agent right or left if possible. In the second state from the left, the results of the actions are switched, so that right moves left and left moves right.
 
-  The second environment is cart pole, where the number of episodes was $500$ and the number of trials was $500$. The goal of the agent is to balance a pole situated on a cart by applying force to move the cart.
+  The second environment is cart pole. The goal of the agent is to balance a pole situated on a cart by applying force to move the cart. Cart pole was chosen also for its relative simplicity, but also for the fact that it represents a control scenario.
 
-  The third environment is mountain car, where we ran experiments for $10$ episodes and $100$ trials. The comparatively low number of episodes and trials is due to the difficulty of the mountain car environment.
+  For all environments, the number of episodes was set to $100$ and the number of trials to be $300$. Given limited computational resources, for all episodes the max length of the episode was set to be 500.
 
-  \section{Results \& Discussion}
 
+  \section{Results}
+  In the plots, the solid line is the average of all of the returns across all trials for a given episode, while the shaded region gives the $95\%$ confidence intervals from the standard error.
+
+  Each plot in \cref{fig:cartpole,fig:shortcorridorgridworld} is for a given algorithm and environment across the range of step-sizes. In general, except for the entropy pseudoreward algorithm on the short corridor gridworld, the claim that a learning rate of $8 \cdot 10^{-4}$ yielded the best performance out of the all the learning rates is most consistent with the data.
+
+  \begin{figure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/CartPole-v0-none}
+      \label{fig:cartpole-none}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/CartPole-v0-entropy}
+      \label{fig:cartpole-entropy}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/CartPole-v0-information_content}
+      \label{fig:cartpole-information-content}
+    \end{subfigure}
+    \caption{Cart pole experiments.}
+    \label{fig:cartpole}
+  \end{figure}
+
+  \begin{figure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/ShortCorridorGridworld-none}
+      \label{fig:shortcorridorgridworld-none}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/ShortCorridorGridworld-entropy}
+      \label{fig:shortcorridorgridworld-entropy}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width=\linewidth]{../figs/ShortCorridorGridworld-information_content}
+      \label{fig:shortcorridorgridworld-information-content}
+    \end{subfigure}
+    \caption{Short corridor gridworld experiments.}
+    \label{fig:shortcorridorgridworld}
+  \end{figure}
+
+
+  In \cref{fig:compare}, we compare the learning curves of the algorithms, selecting a learning rate for each, for a given environment. The learning rate selected corresponded to the curve that attained the highest return most of the time in \cref{fig:cartpole,fig:shortcorridorgridworld}, which was $8 \cdot 10^{-4}$ for most algorithm/environment/learning rate combinations, except for the entropy pseudoreward algorithm on the short corridor gridworld, as noted above. This selection was done visually.
+
+  \begin{figure}
+    \centering
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width = \linewidth]{../figs/CartPole-v0-compare}
+      \label{fig:compare-cartpole}
+    \end{subfigure}
+    \begin{subfigure}{\textwidth}
+      \centering
+      \includegraphics[width = \linewidth]{../figs/ShortCorridorGridworld-compare}
+      \label{fig:compare-shortcorridorgridworld}
+    \end{subfigure}
+    \caption{Comparison of learning curves across different algorithms. }
+    \label{fig:compare}
+  \end{figure}
+
+
+
+  \section{Discussion}
+  It is interesting to note that the entropy pseudoreward algorithm performed the worst on the short corridor gridworld. In fact, performance got worse as time passed, and the average return drastically decreased with higher step-sizes, in contrast to all of the other algorithm and environment combinations. On the other hand, the information content pseudoreward performed similarly to the "vanilla" reward algorithm. In fact, both vanilla reward and information content pseudoreward algorithms approached the optimal return of -11.6 \citep[p.~323]{sutton2018reinforcement} with increasing episodes.
+
+  A low return on the short corridor gridworld means that a lot of time was spent in the non-terminal states. This is likely to happen if a agent selects one action with probability much higher than selecting the other probability so that the agent oscillates between the state where the actions are switched and another non-terminal state. 
+
+  In \ref{fig:compare-cartpole}, from episodes 0 to around 40, the pseudoreward algorithms seem to begin to outperform the vanilla reward algorithm. However, from episode 40 onwards, the slope of the learning curves for the entropy and information content pseudorewards seems to decrease, while the slope for the learning curve of the vanilla reward continues to increase. This result is consistent with the idea that the entropy and information content pseudorewards incentivize exploration of the state-action space by encouraging, respectively, high entropy policies and taking actions with low probability. However, as time progresses and as more of the state-action space is explored, such exploration might be detrimental if an optimal policy is already found. To that extent, entropy and information content pseudorewards act similarly to $\epsilon$-greedy methods in leraning optimal value functions. This result suggests an annealing procedure similar to that used for $\epsilon$-greedy methods, where we gradually reduce the additional entropy or information content term to zero more episodes are experienced.
+
+  Additionally, the entropy pseudoreward seems to suffer more from this detrimental exploration effect than the information content pseudoreward. The slope of the information content pseudoreward learning curve does not decrease as steeply as the slope for the entropy pseudoreward learning curve. It is possible that the entropy pseudorewards encourages exploration to a greater extent than the information content pseudoreward. In the first case, policies with higher entropy are encouraged. In the second case, the agent is encouraged to select actions with low action probability. While these two situations are related, a higher entropy policy may require probability density to be evenly distributed across all outcomes. If the optimal policy has low entropy, that policy may not be the optimal policy under the entropy pseudoreward setting. In contrast, the information content pseudoreward is a less stringent, more local requirement. If a low probability action is taken, the reward gained is relatively high. The reward bonus depends upon the action actually taken. If the optimal policy has a low probability for a given action, the probability of taking that action may be increased rarely in the information content setting since the probability of taking that action in the first place to receive the information content bonus is low. Hence, even if the optimal policy has actions with low probability, the optimal policy is not itself impossible to reach. The learned policy might oscillate in a neighbourhood of the optimal policy, but the situation is better than with an entropy pseudoreward.
+
+  In \ref{fig:compare-shortcorridorgridworld}, there is essentially little difference in the learning curves for vanilla reward and information content. Hence, assuming that the agent has the optimal policy The difference between both entropy pseudoreward and both information content pseudoreward and vanilla reward is significant, as already noted above.
 
   \section{Conclusion}
+  In the cart pole environment, using entropy and information content as reward bonuses seems to improve the returns accumulated in early episodes. However, this advantage is soon lost as exploration prevents convergence to the optimal policy as the environment is sufficiently explored.
+
+  In the short corridor gridworld,
+
+  Our results suggest that the benefits of using entropy and information content as exploration bonuses depend upon the environment. While there may be a benefit to using these bonuses for episodes near the start, these bonuses may hinder convergence to an optimal policy. However, such characteristics may be beneficial in non-stationary environments and should be explored in future experiments.
 
   \bibliography{bibliography}
   \bibliographystyle{plain}

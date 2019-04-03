@@ -11,22 +11,22 @@ env5 = SCGrid()
 
 # consider artificially terminating episodes if they run too long?
 
-envs = [env1, env5]
-pseudorewards = ["none", "entropy", "information_content"]
+envs = [env5, env1]
+pseudorewards = ["entropy", "information_content", "none"]
 
-run_experiment = False
+run_experiment = True
 render_env = False
 print_return = False
-load_data = True
+load_data = False
 test_run = False
 save_data = run_experiment
-episodes = 50
+episodes = 100
 gamma = 0.99
-episode_length = None
+episode_length = 200
 
 # learning rates we will try
 lrs = [1e-4 * (2 ** i) for i in range(4)]
-trials = 200
+trials = 300
 
 returns = {"env": [], "lr": [], "pseudoreward": [], "episode": [], "return": []}
 episode_ixs = [i + 1 for i in range(episodes)]
@@ -56,6 +56,7 @@ if run_experiment == True:
         for lr in lrs:
             for pseudoreward in pseudorewards:
                 np.random.seed(609) # the random seed should be reset for every type of experiment since we want fair comparisons between algs
+                torch.manual_seed(609)
                 t_start = time.time()
                 try:
                     env_name = env.unwrapped.spec.id
@@ -69,12 +70,9 @@ if run_experiment == True:
 
                     trial_t_start = time.time()
 
-                    if env == env2 or env == env3:
-                        print("will limit episode length to {} time steps".format(episode_length))
-                        # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
-                        data = train(env = env, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, episode_length = episode_length, render_env = render_env, print_return = print_return)
-                    else:
-                        data = train(env = env, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, render_env = render_env, print_return = print_return)
+                    #print("will limit episode length to {} time steps".format(episode_length))
+                    # if we are doing either of these environments, limit the episode length b/c they take a v long time to run
+                    data = train(env = env, lr = lr, gamma = gamma, pseudoreward = pseudoreward, episodes = episodes, episode_length = episode_length, render_env = render_env, print_return = print_return)
 
                     trial_t_end = time.time()
 
@@ -110,7 +108,7 @@ if load_data is True or run_experiment is True:
             curr_env = df.env == env_name
             curr_pseudoreward = df.pseudoreward == pseudoreward
             plt.figure(figsize = (15, 10))
-            ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_pseudoreward, :])
+            ax = seaborn.lineplot(x = "episode", y = "return", hue = "lr", legend = "full", data = df.loc[curr_env & curr_pseudoreward, :], ci = 95)
             ax.set_title("Learning curves for pseudoreward = {} on {}".format(pseudoreward, env_name))
             plt.savefig("figs\\{}-{}.png".format(env_name, pseudoreward))
             #plt.show()
@@ -132,7 +130,7 @@ for env in envs:
     best_info = (df.pseudoreward == "information_content") & (df.lr == 8e-4)
     rows = curr_env & (best_none | best_entropy | best_info)
     plt.figure(figsize = (15, 10))
-    ax = seaborn.lineplot(x = "episode", y = "return", style = "lr", hue = "pseudoreward", legend = "full", data = df.loc[rows, :])
+    ax = seaborn.lineplot(x = "episode", y = "return", style = "lr", hue = "pseudoreward", legend = "full", data = df.loc[rows, :], ci = 95)
     ax.set_title("Comparison of algorithms on env = {}".format(env_name))
     plt.savefig("figs\\{}-compare.png".format(env_name))
     #plt.show()
